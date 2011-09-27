@@ -1,0 +1,3 @@
+server_testing: runs a local server that listens on port 5402 for line-drawing messages
+
+client_testing: sends and receives line-drawing messages to the local server. draws lines.
