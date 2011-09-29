@@ -27,7 +27,7 @@ void setup() {
   smooth();
   oscP5 = new OscP5(this, myListenPort);
   
-  id = int(random(2^8));
+  id = int(random(1<<8));
   localColor = color(0);
   
   drawServer = new NetAddress("127.0.0.1", serverListenPort);
@@ -76,7 +76,7 @@ void cleanStage() {
 
 void draw() {
   OscMessage message;
-  
+
   background(#ffffff);
   noStroke();
   colorMode(HSB, 150, 50, 100);

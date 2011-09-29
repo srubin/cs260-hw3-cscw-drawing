@@ -18,6 +18,7 @@ ArrayList history;
 
 void setup() {
   history = new ArrayList();
+  background(255);
   size(100, 100); 
   //frameRate(100);
   oscP5 = new OscP5(this,listenPort);
@@ -42,15 +43,17 @@ void oscEvent(OscMessage message) {
       return;
     }
     // do not send move messages to their own client
-    if (message.addrPattern() == "/move") {
-       for(int i=0; i<listeners.size()-1; i++) {
+    if (message.addrPattern().equals("/move")) {
+       for(int i=0; i<listeners.size(); i++) {
          NetAddress client = listeners.get(i);
-         if (client.address().equals(message.address())) { continue; }
-         oscP5.send(message, client);
+         if (!("/" + client.address()).equals(message.address())) {
+           oscP5.send(message, client);
+         }
        }
+    } else {
+      oscP5.send(message, listeners);
+      history.add(message);
     }
-    oscP5.send(message, listeners);
-    history.add(message);
   }
 }
 
