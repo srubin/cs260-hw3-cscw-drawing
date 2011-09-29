@@ -18,7 +18,7 @@ void setup() {
   oscP5 = new OscP5(this, myListenPort);
   cleanStage();
   
-  id = int(random(2^16-1));
+  id = int(random(2^8));
   localColor = color(0);
   localSize = 1;
   
@@ -27,12 +27,16 @@ void setup() {
   oscP5.flush(message, drawServer);
   
   oscP5.plug(this,"drawRemote","/draw");
+  oscP5.plug(this,"moveRemote","/move");
+  oscP5.plug(this,"chatRemote","/chat");
+  oscP5.plug(this,"imageRemote","/image");
   oscP5.plug(this,"cleanStage","/cleanStage");
 }
 
 void cleanStage() {
   background(255);
-  fill(0);
+  fill(255);
+  rect(0,0,800,600);
   
   noStroke();
   colorMode(HSB, 150, 50, 100);
@@ -63,14 +67,21 @@ void draw() {
   oscP5.send(message, drawServer);
 }
 
-void oscEvent(OscMessage message) {
-  println("### received an osc message with addrpattern "+message.addrPattern()+" and typetag "+message.typetag());
-  message.print(); 
-}
-
 void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
   stroke(c);
   line(mouseX, mouseY, pmouseX, pmouseY);
+}
+
+void moveRemote(int x, int y, color c, int brushsize, int id) {
+  // stubbed 
+}
+
+void chatRemote(String chatstring) {
+  // stubbed 
+}
+
+void imageRemote() {
+  // pstubbed
 }
 
 OscMessage moveMessage() {
@@ -98,6 +109,7 @@ OscMessage drawMessage() {
 
 OscMessage timerMessage() {
   OscMessage message = new OscMessage("/timer");
+  // note that the server expects timerPosition to be a float between 0 and 1
   //message.add(timerPosition);
   
   return message;
@@ -112,7 +124,6 @@ OscMessage chatMessage() {
 
 OscMessage imageMessage() {
   OscMessage message = new OscMessage("/image");
-  //message.add(url);
   //message.add(imageData);
   
   return message;
