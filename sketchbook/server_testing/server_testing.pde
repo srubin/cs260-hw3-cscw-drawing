@@ -16,12 +16,10 @@ int broadcastPort = 5403;
 
 ArrayList history;
 
-String connectPattern = "/server/connect";
-String disconnectPattern = "/server/disconnect";
-
 void setup() {
   history = new ArrayList();
   size(100, 100); 
+<<<<<<< HEAD
   //frameRate(100);
   oscP5 = new OscP5(this,listenPort);
   fill(0);
@@ -31,22 +29,51 @@ void setup() {
 void draw() {
 
 } 
+=======
+  frameRate(1);
+  oscP5 = new OscP5(this,listenPort);
+  oscP5.plug(this,"timer","/timer");
+}
+
+void draw() {
+  fill(0);
+  text("Server", 10, 30);
+}
+>>>>>>> origin/master
 
 void oscEvent(OscMessage message) {
-  /* check if the address pattern fits any of our patterns */
-  if (message.addrPattern().equals(connectPattern)) {
-    connect(message.netAddress().address());
-  }
-  else if (message.addrPattern().equals(disconnectPattern)) {
-    disconnect(message.netAddress().address());
-  }
-  else {
+  if (message.isPlugged() == false) {
+    if (message.addrPattern().equals("/server/connect")) {
+      connect(message.netAddress().address());
+      return;
+    }
+    if (message.addrPattern().equals("/server/disconnect")) {
+      disconnect(message.netAddress().address());
+      return;
+    }
+    // do not send move messages to their own client
+    if (message.addrPattern() == "/move") {
+       for(int i=0; i<listeners.size()-1; i++) {
+         NetAddress client = listeners.get(i);
+         if (client.address().equals(message.address())) { continue; }
+         oscP5.send(message, client);
+       }
+    }
     oscP5.send(message, listeners);
     history.add(message);
   }
 }
 
-private void connect(String IP) {
+void timer(float position) {
+  int lastToSend = int(history.size() * position);
+  OscMessage clear = new OscMessage("/cleanStage");
+  oscP5.send(clear, listeners);
+  for (int i=0; i<lastToSend; i++) {
+     oscP5.send((OscMessage)history.get(i), listeners);
+  }
+} 
+
+void connect(String IP){
   if (!listeners.contains(IP, broadcastPort)) {
     listeners.add(new NetAddress(IP, broadcastPort));
     println("### "+IP+" now connected.");
@@ -55,9 +82,7 @@ private void connect(String IP) {
   }
 }
 
-
-
-private void disconnect(String IP) {
+void disconnect(String IP) {
   if (listeners.contains(IP, broadcastPort)) {
     listeners.remove(IP, broadcastPort);
   } else {
