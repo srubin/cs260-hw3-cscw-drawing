@@ -47,6 +47,10 @@ void setup() {
       point(i+10, j-15);
     }
   }
+  fill(0);
+  noStroke();
+  rect(10,0,75,10);
+  
   cp5 = new ControlP5(this);
   cp5.addSlider("localSize",1,50,localSize,10,45,150,25).setCaptionLabel("Brush size");
   cp5.addSlider("historyPosition",0.0,1.0,historyPosition,10,115,150,25).setCaptionLabel("History");
@@ -79,6 +83,10 @@ void cleanStage() {
 
 void draw() {
   OscMessage message;
+  
+  fill(localColor);
+  noStroke();
+  rect(85,0,75,10);
   
   if (mousePressed) {
     if (colorSelected(mouseX, mouseY)) {
@@ -170,11 +178,16 @@ OscMessage imageMessage() {
 }
 
 boolean colorSelected(int x, int y) {
-  return x <= 150 && y <= 50;
+  return (x >= 10 && x <= 160 && y <= 35 && y >= 10) 
+    || (x >=10 && x <= 85 && y <= 10);
 }
 
 void setColor(int x, int y) {
-  localColor = color(x-10,y+15,100);
+  if (x >= 10 && x <= 85 && y <= 10) {
+    localColor = color(#000000);
+  } else {
+    localColor = color(x-10,y+15,100);
+  }
 }
 
 boolean inDrawingArea(int x, int y) {
