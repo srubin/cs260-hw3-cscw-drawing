@@ -22,13 +22,14 @@ String disconnectPattern = "/server/disconnect";
 void setup() {
   history = new ArrayList();
   size(100, 100); 
-  frameRate(100);
+  //frameRate(100);
   oscP5 = new OscP5(this,listenPort);
+  fill(0);
+  text("Server", 10, 30);
 }
 
 void draw() {
-  fill(0);
-  text("Server", 10, 30);
+
 } 
 
 void oscEvent(OscMessage message) {
