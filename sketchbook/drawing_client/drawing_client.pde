@@ -2,6 +2,8 @@ import oscP5.*;
 import netP5.*;
 import controlP5.*;
 
+import java.util.regex.Pattern;
+
 OscP5 oscP5;
 NetAddress drawServer;
 ControlP5 cp5;
@@ -37,6 +39,7 @@ void setup() {
   oscP5.plug(this,"moveRemote","/move");
   oscP5.plug(this,"chatRemote","/chat");
   oscP5.plug(this,"imageRemote","/image");
+  oscP5.plug(this,"timerRemote","/timer");
   oscP5.plug(this,"cleanStage","/cleanStage");
   
   noStroke();
@@ -68,6 +71,17 @@ void setup() {
   canvas.endDraw();
 }
 
+void imageButton() {
+  String imageLocation = selectInput("Choose an image file (png, gif, tga, jpg)");
+  if (imageLocation != null) {
+    if (imageLocation.matches(".*(png|gif|tga|jpg|jpeg)$")) {
+      byte[] imageData = loadBytes(imageLocation); 
+      OscMessage message = imageMessage(imageData);
+      oscP5.send(message, drawServer);
+    }
+  }
+}
+
 void cleanStage() {
   canvas.beginDraw();
   canvas.fill(#ffffff);
@@ -97,8 +111,7 @@ void draw() {
     message = moveMessage(); 
   }
   
-  if (false) { message = chatMessage(); }
-  if (false) { message = imageMessage(); }
+  if (false) { message = chatMessage("i am not a robot, i am a unicorn."); }
 
   oscP5.send(message, drawServer);
 }
@@ -120,8 +133,15 @@ void chatRemote(String chatstring) {
   // stubbed 
 }
 
-void imageRemote() {
-  // pstubbed
+void imageRemote(byte[] imageData, int x, int y) {
+  // discussion of PImage loading from byte[] found online
+  // http://processing.org/discourse/yabb2/YaBB.pl?num=1234546778
+  //Image awtImage = Toolkit.getDefaultToolkit().createImage(imageData);
+  //PImage img = loadImageMT(awtImage);
+}
+
+void timerRemote(float position) {
+  historyPosition = position;
 }
 
 OscMessage moveMessage() {
@@ -149,22 +169,23 @@ OscMessage drawMessage() {
 
 OscMessage timerMessage() {
   OscMessage message = new OscMessage("/timer");
-  // note that the server expects timerPosition to be a float between 0 and 1
-  //message.add(timerPosition);
+  message.add(historyPosition);
   
   return message;
 }
 
-OscMessage chatMessage() {
+OscMessage chatMessage(String chatString) {
   OscMessage message = new OscMessage("/chat");
-  //message.add(chatString);
+  message.add(chatString);
   
   return message;
 }
 
-OscMessage imageMessage() {
+OscMessage imageMessage(byte[] imageData) {
   OscMessage message = new OscMessage("/image");
-  //message.add(imageData);
+  message.add(imageData);
+  //message.add(someXValue);
+  //message.add(someYValue);
   
   return message;
 }

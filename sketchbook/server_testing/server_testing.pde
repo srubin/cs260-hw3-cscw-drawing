@@ -14,25 +14,28 @@ NetAddressList listeners = new NetAddressList();
 int listenPort = 5402;
 int broadcastPort = 5403;
 
-ArrayList history;
+boolean inThePast = false;
+int lastToSend;
+
+List history;
 
 void setup() {
   history = new ArrayList();
   size(100, 100); 
-  //frameRate(100);
+  frameRate(1);
   oscP5 = new OscP5(this,listenPort);
-  fill(0);
-  text("Server", 10, 30);
 
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
 }
 
 void draw() {
+  fill(0);
+  text("Server", 10, 30);
 }
 
 void oscEvent(OscMessage message) {
-  if (message.isPlugged() == false) {
+  if (!message.isPlugged()) {
     if (message.addrPattern().equals("/server/connect")) {
       connect(message.netAddress().address());
       return;
@@ -50,17 +53,33 @@ void oscEvent(OscMessage message) {
        }
     }
     oscP5.send(message, listeners);
-    history.add(message);
+    if (!inThePast) {
+      history.add(message);
+    } else {
+      if (message.addrPattern() == "/draw") {
+        // we only re-start keeping track of history when new drawings are put down
+        inThePast = false;
+        history = history.subList(0, lastToSend);
+        history.add(message);
+        OscMessage resetToPresent = new OscMessage("/timer");
+        resetToPresent.add(1.0);
+        oscP5.send(resetToPresent);
+      } 
+    }
   }
 }
 
 void timer(float position) {
-  int lastToSend = int(history.size() * position);
+  lastToSend = int(history.size() * position);
   OscMessage clear = new OscMessage("/cleanStage");
   oscP5.send(clear, listeners);
+  OscMessage adjustSlider = new OscMessage("/timer");
+  adjustSlider.add(position);
+  oscP5.send(adjustSlider, listeners);
   for (int i=0; i<lastToSend; i++) {
      oscP5.send((OscMessage)history.get(i), listeners);
   }
+  inThePast = true;
 } 
 
 void connect(String IP){
