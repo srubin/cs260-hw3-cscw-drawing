@@ -28,11 +28,13 @@ void setup() {
 
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
+  
+  fill(0);
+  text("Server", 10, 30);
 }
 
 void draw() {
-  fill(0);
-  text("Server", 10, 30);
+
 }
 
 void oscEvent(OscMessage message) {
