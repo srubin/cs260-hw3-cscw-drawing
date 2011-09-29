@@ -38,15 +38,6 @@ void setup() {
   oscP5.plug(this,"chatRemote","/chat");
   oscP5.plug(this,"imageRemote","/image");
   oscP5.plug(this,"cleanStage","/cleanStage");
-<<<<<<< HEAD
-=======
-}
-
-void cleanStage() {
-  background(255);
-  fill(255);
-  rect(0,0,800,600);
->>>>>>> origin/master
   
   noStroke();
   colorMode(HSB, 150, 50, 100);
