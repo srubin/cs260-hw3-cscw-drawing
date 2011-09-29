@@ -17,6 +17,7 @@ boolean eraseOn = false;
 
 ControlFont menlo;
 PGraphics canvas;
+PGraphics ghosts;
 
 void setup() {
   size(800,600);
@@ -39,18 +40,6 @@ void setup() {
   oscP5.plug(this,"imageRemote","/image");
   oscP5.plug(this,"cleanStage","/cleanStage");
   
-  noStroke();
-  colorMode(HSB, 150, 50, 100);
-  for (int i = 0; i < 150; i++) {
-    for (int j = 25; j < 50; j++) {
-      stroke(i, j, 100);
-      point(i+10, j-15);
-    }
-  }
-  fill(0);
-  noStroke();
-  rect(10,0,75,10);
-  
   cp5 = new ControlP5(this);
   cp5.addSlider("localSize",1,50,localSize,10,45,150,25).setCaptionLabel("Brush size");
   cp5.addSlider("historyPosition",0.0,1.0,historyPosition,10,115,150,25).setCaptionLabel("History");
@@ -69,20 +58,38 @@ void setup() {
   canvas = createGraphics(630,600,JAVA2D);
   canvas.beginDraw();
   canvas.smooth();
+  canvas.background(#ffffff);
   canvas.endDraw();
+  
+  ghosts = createGraphics(800,600,JAVA2D);
+  ghosts.beginDraw();
+  ghosts.smooth();
+  ghosts.endDraw();
 }
 
 void cleanStage() {
   canvas.beginDraw();
-  canvas.fill(#ffffff);
-  canvas.noStroke();
-  canvas.rect(0,0,630,600);
+  canvas.background(#ffffff);
   canvas.endDraw();
   image(canvas,170,0);
 }
 
 void draw() {
   OscMessage message;
+  
+  background(#ffffff);
+  noStroke();
+  colorMode(HSB, 150, 50, 100);
+  for (int i = 0; i < 150; i++) {
+    for (int j = 25; j < 50; j++) {
+      stroke(i, j, 100);
+      point(i+10, j-15);
+    }
+  }
+  colorMode(ARGB);
+  fill(0);
+  noStroke();
+  rect(10,0,75,10);
   
   fill(localColor);
   noStroke();
@@ -109,6 +116,9 @@ void draw() {
   if (false) { message = imageMessage(); }
 
   oscP5.send(message, drawServer);
+  
+  image(canvas, 170, 0);
+  image(ghosts,0,0);
 }
 
 void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
@@ -117,11 +127,16 @@ void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
   canvas.stroke(c);
   canvas.line(cx, cy, px, py);
   canvas.endDraw();
-  image(canvas, 170, 0);
+  
 }
 
 void moveRemote(int x, int y, color c, int brushsize, int id) {
-  // stubbed 
+  ghosts.beginDraw();
+  ghosts.background(0,0);
+  ghosts.noStroke();
+  ghosts.fill(c);
+  ghosts.ellipse(x,y,brushsize,brushsize); 
+  ghosts.endDraw();
 }
 
 void chatRemote(String chatstring) {
@@ -186,7 +201,9 @@ void setColor(int x, int y) {
   if (x >= 10 && x <= 85 && y <= 10) {
     localColor = color(#000000);
   } else {
+    colorMode(HSB, 150, 50, 100);
     localColor = color(x-10,y+15,100);
+    colorMode(ARGB);
   }
 }
 
