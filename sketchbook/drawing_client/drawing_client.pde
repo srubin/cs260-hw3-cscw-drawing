@@ -48,11 +48,16 @@ void setup() {
   cp5.addSlider("localSize",1,50,localSize,10,45,150,25).setCaptionLabel("Brush size");
   cp5.addSlider("historyPosition",0.0,1.0,historyPosition,10,115,150,25).setCaptionLabel("History");
   cp5.addButton("imageButton",0,10,150,150,25).setCaptionLabel("Add image");
-  cp5.addToggle("eraseOn",false,10,80,150,25).setCaptionLabel("Erase");
+  cp5.addToggle("eraseOn",false,90,80,70,25).setCaptionLabel("Eraser");
+  cp5.addButton("cleanStage",0,10,80,70,25).setCaptionLabel("Clear");
   stylePurple(cp5.controller("eraseOn"), "toggle");
   stylePurple(cp5.controller("localSize"),"slider");
   stylePurple(cp5.controller("historyPosition"),"slider");
   stylePurple(cp5.controller("imageButton"),"button");
+  stylePurple(cp5.controller("cleanStage"),"");
+  
+  cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
+  cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
   
   canvas = createGraphics(630,600,JAVA2D);
   canvas.beginDraw();
@@ -66,6 +71,7 @@ void cleanStage() {
   canvas.noStroke();
   canvas.rect(0,0,630,600);
   canvas.endDraw();
+  image(canvas,170,0);
 }
 
 void draw() {
@@ -101,7 +107,7 @@ void oscEvent(OscMessage message) {
 
 void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
   canvas.beginDraw();
-  canvas.strokeWeight = brushSize;
+  canvas.strokeWeight(brushSize);
   canvas.stroke(c);
   canvas.line(cx, cy, px, py);
   canvas.endDraw();
@@ -178,9 +184,6 @@ void stylePurple(Controller c, String t) {
     c.captionLabel().style().marginLeft = -(7*len+10);
   } else if (t == "button") {
     c.captionLabel().style().marginLeft = 140-7*len;
-  } else if (t == "toggle") {
-    c.captionLabel().style().marginLeft = 142-7*len;
-    c.captionLabel().style().marginTop = -20;
   }
   c.captionLabel().setControlFont(menlo);
 }
