@@ -45,12 +45,12 @@ void setup() {
   cp5.addSlider("historyPosition",0.0,1.0,historyPosition,10,115,150,25).setCaptionLabel("History");
   cp5.addButton("imageButton",0,10,150,150,25).setCaptionLabel("Add image");
   cp5.addToggle("eraseOn",false,90,80,70,25).setCaptionLabel("Eraser");
-  cp5.addButton("cleanStage",0,10,80,70,25).setCaptionLabel("Clear");
+  cp5.addButton("clean",0,10,80,70,25).setCaptionLabel("Clear");
   stylePurple(cp5.controller("eraseOn"), "toggle");
   stylePurple(cp5.controller("localSize"),"slider");
   stylePurple(cp5.controller("historyPosition"),"slider");
   stylePurple(cp5.controller("imageButton"),"button");
-  stylePurple(cp5.controller("cleanStage"),"");
+  stylePurple(cp5.controller("clean"),"");
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
   cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
@@ -65,6 +65,11 @@ void setup() {
   ghosts.beginDraw();
   ghosts.smooth();
   ghosts.endDraw();
+}
+
+void clean() {
+  OscMessage message = new OscMessage("/cleanStage");
+  oscP5.send(message, drawServer);
 }
 
 void cleanStage() {
