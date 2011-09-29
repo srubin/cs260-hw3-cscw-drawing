@@ -19,6 +19,7 @@ boolean eraseOn = false;
 
 ControlFont menlo;
 PGraphics canvas;
+PGraphics ghosts;
 
 void setup() {
   size(800,600);
@@ -28,7 +29,7 @@ void setup() {
   smooth();
   oscP5 = new OscP5(this, myListenPort);
   
-  id = int(random(2^8));
+  id = int(random(1<<8));
   localColor = color(0);
   
   drawServer = new NetAddress("127.0.0.1", serverListenPort);
@@ -42,25 +43,17 @@ void setup() {
   oscP5.plug(this,"timerRemote","/timer");
   oscP5.plug(this,"cleanStage","/cleanStage");
   
-  noStroke();
-  colorMode(HSB, 150, 50, 100);
-  for (int i = 0; i < 150; i++) {
-    for (int j = 25; j < 50; j++) {
-      stroke(i, j, 100);
-      point(i+10, j-15);
-    }
-  }
   cp5 = new ControlP5(this);
   cp5.addSlider("localSize",1,50,localSize,10,45,150,25).setCaptionLabel("Brush size");
   cp5.addSlider("historyPosition",0.0,1.0,historyPosition,10,115,150,25).setCaptionLabel("History");
   cp5.addButton("imageButton",0,10,150,150,25).setCaptionLabel("Add image");
   cp5.addToggle("eraseOn",false,90,80,70,25).setCaptionLabel("Eraser");
-  cp5.addButton("cleanStage",0,10,80,70,25).setCaptionLabel("Clear");
+  cp5.addButton("clean",0,10,80,70,25).setCaptionLabel("Clear");
   stylePurple(cp5.controller("eraseOn"), "toggle");
   stylePurple(cp5.controller("localSize"),"slider");
   stylePurple(cp5.controller("historyPosition"),"slider");
   stylePurple(cp5.controller("imageButton"),"button");
-  stylePurple(cp5.controller("cleanStage"),"");
+  stylePurple(cp5.controller("clean"),"");
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
   cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
@@ -68,7 +61,18 @@ void setup() {
   canvas = createGraphics(630,600,JAVA2D);
   canvas.beginDraw();
   canvas.smooth();
+  canvas.background(#ffffff);
   canvas.endDraw();
+  
+  ghosts = createGraphics(800,600,JAVA2D);
+  ghosts.beginDraw();
+  ghosts.smooth();
+  ghosts.endDraw();
+}
+
+void clean() {
+  OscMessage message = new OscMessage("/cleanStage");
+  oscP5.send(message, drawServer);
 }
 
 void imageButton() {
@@ -84,15 +88,31 @@ void imageButton() {
 
 void cleanStage() {
   canvas.beginDraw();
-  canvas.fill(#ffffff);
-  canvas.noStroke();
-  canvas.rect(0,0,630,600);
+  canvas.background(#ffffff);
   canvas.endDraw();
   image(canvas,170,0);
 }
 
 void draw() {
   OscMessage message;
+
+  background(#ffffff);
+  noStroke();
+  colorMode(HSB, 150, 50, 100);
+  for (int i = 0; i < 150; i++) {
+    for (int j = 25; j < 50; j++) {
+      stroke(i, j, 100);
+      point(i+10, j-15);
+    }
+  }
+  colorMode(ARGB);
+  fill(0);
+  noStroke();
+  rect(10,0,75,10);
+  
+  fill(localColor);
+  noStroke();
+  rect(85,0,75,10);
   
   if (mousePressed) {
     if (colorSelected(mouseX, mouseY)) {
@@ -114,6 +134,9 @@ void draw() {
   if (false) { message = chatMessage("i am not a robot, i am a unicorn."); }
 
   oscP5.send(message, drawServer);
+  
+  image(canvas, 170, 0);
+  image(ghosts,0,0);
 }
 
 void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
@@ -122,11 +145,16 @@ void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
   canvas.stroke(c);
   canvas.line(cx, cy, px, py);
   canvas.endDraw();
-  image(canvas, 170, 0);
+  
 }
 
 void moveRemote(int x, int y, color c, int brushsize, int id) {
-  // stubbed 
+  ghosts.beginDraw();
+  ghosts.background(0,0);
+  ghosts.noStroke();
+  ghosts.fill(c);
+  ghosts.ellipse(x,y,brushsize,brushsize); 
+  ghosts.endDraw();
 }
 
 void chatRemote(String chatstring) {
@@ -191,11 +219,18 @@ OscMessage imageMessage(byte[] imageData) {
 }
 
 boolean colorSelected(int x, int y) {
-  return x <= 150 && y <= 50;
+  return (x >= 10 && x <= 160 && y <= 35 && y >= 10) 
+    || (x >=10 && x <= 85 && y <= 10);
 }
 
 void setColor(int x, int y) {
-  localColor = color(x-10,y+15,100);
+  if (x >= 10 && x <= 85 && y <= 10) {
+    localColor = color(#000000);
+  } else {
+    colorMode(HSB, 150, 50, 100);
+    localColor = color(x-10,y+15,100);
+    colorMode(ARGB);
+  }
 }
 
 boolean inDrawingArea(int x, int y) {
