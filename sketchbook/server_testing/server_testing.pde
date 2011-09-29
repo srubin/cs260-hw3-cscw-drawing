@@ -19,27 +19,17 @@ ArrayList history;
 void setup() {
   history = new ArrayList();
   size(100, 100); 
-<<<<<<< HEAD
   //frameRate(100);
   oscP5 = new OscP5(this,listenPort);
   fill(0);
   text("Server", 10, 30);
-}
 
-void draw() {
-
-} 
-=======
-  frameRate(1);
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
 }
 
 void draw() {
-  fill(0);
-  text("Server", 10, 30);
 }
->>>>>>> origin/master
 
 void oscEvent(OscMessage message) {
   if (message.isPlugged() == false) {
