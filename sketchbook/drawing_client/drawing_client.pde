@@ -15,6 +15,7 @@ int id;
 color localColor;
 int localSize = 5;
 float historyPosition = 1.0;
+HistoryListener historyListener;
 boolean eraseOn = false;
 
 ControlFont menlo;
@@ -54,6 +55,9 @@ void setup() {
   stylePurple(cp5.controller("historyPosition"),"slider");
   stylePurple(cp5.controller("imageButton"),"button");
   stylePurple(cp5.controller("clean"),"");
+  
+  historyListener = new HistoryListener();
+  cp5.controller("historyPosition").addListener(historyListener);
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
   cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
@@ -125,7 +129,6 @@ void draw() {
     else {
        message = moveMessage(); 
     }
-    if (false) { message = timerMessage(); }
   }
   else { 
     message = moveMessage(); 
@@ -169,7 +172,8 @@ void imageRemote(byte[] imageData, int x, int y) {
 }
 
 void timerRemote(float position) {
-  historyPosition = position;
+  println("got timer in client to " + position);
+  cp5.controller("historyPosition").setValue(position);
 }
 
 OscMessage moveMessage() {
@@ -195,9 +199,9 @@ OscMessage drawMessage() {
   return message;
 }
 
-OscMessage timerMessage() {
+OscMessage timerMessage(float val) {
   OscMessage message = new OscMessage("/timer");
-  message.add(historyPosition);
+  message.add(val);
   
   return message;
 }
@@ -252,4 +256,14 @@ void stylePurple(Controller c, String t) {
     c.captionLabel().style().marginLeft = 140-7*len;
   }
   c.captionLabel().setControlFont(menlo);
+}
+
+class HistoryListener implements ControlListener {
+  float oldHist = 1.0;
+  public void controlEvent(ControlEvent e) {
+    if (oldHist != e.controller().value()) { 
+      oscP5.send(timerMessage(e.controller().value()), drawServer);
+      oldHist = e.controller().value();
+    }
+  } 
 }

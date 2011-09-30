@@ -23,9 +23,7 @@ void setup() {
   history = new ArrayList();
   background(255);
   size(100, 100); 
-  frameRate(1);
-  oscP5 = new OscP5(this,listenPort);
-
+  //frameRate(1);
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
   
@@ -58,17 +56,17 @@ void oscEvent(OscMessage message) {
     } else {
       oscP5.send(message, listeners);
     }
-    if (!inThePast) {
+    if (!inThePast && !message.addrPattern().equals("/move")) {
       history.add(message);
-    } else {
-      if (message.addrPattern() == "/draw") {
+    } else if (inThePast) {
+      if (message.addrPattern().equals("/draw")) {
         // we only re-start keeping track of history when new drawings are put down
         inThePast = false;
         history = history.subList(0, lastToSend);
         history.add(message);
         OscMessage resetToPresent = new OscMessage("/timer");
         resetToPresent.add(1.0);
-        oscP5.send(resetToPresent);
+        oscP5.send(resetToPresent, listeners);
       } 
     }
   }
