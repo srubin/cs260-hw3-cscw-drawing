@@ -22,6 +22,7 @@ boolean reset = false;
 ControlFont menlo;
 PGraphics canvas;
 PGraphics ghosts;
+Textarea chat;
 
 void setup() {
   size(800,600);
@@ -52,6 +53,14 @@ void setup() {
   cp5.addButton("imageButton",0,10,150,150,25).setCaptionLabel("Add image");
   cp5.addToggle("eraseOn",false,90,80,70,25).setCaptionLabel("Eraser");
   cp5.addButton("clean",0,10,80,70,25).setCaptionLabel("Clear");
+  cp5.addTextfield("chatEntry",10,565,780,25);
+  
+  cp5.addTextarea("chatDisplay","test woop woop woop woop woop woop",10,185,140,370);
+  chat = (Textarea)cp5.getGroup("chatDisplay");
+  chat.setColor(#000000);
+  
+  
+  stylePurple(cp5.controller("chatEntry"), "toggle");
   stylePurple(cp5.controller("eraseOn"), "toggle");
   stylePurple(cp5.controller("localSize"),"slider");
   stylePurple(cp5.controller("historyPosition"),"slider");
@@ -164,7 +173,8 @@ void moveRemote(int x, int y, color c, int brushsize, int id) {
 }
 
 void chatRemote(String chatstring) {
-  // stubbed 
+  chat.setText(chat.text() + "\n" + chatstring);
+  chat.scroll(1.0);
 }
 
 void imageRemote(byte[] imageData, int x, int y) {
@@ -275,4 +285,9 @@ class HistoryListener implements ControlListener {
     }
     reset = false;
   }
+}
+
+void chatEntry(String t) {
+  OscMessage message = chatMessage(t);
+  oscP5.send(message, drawServer);
 }
