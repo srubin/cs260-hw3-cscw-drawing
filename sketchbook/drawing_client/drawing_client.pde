@@ -17,6 +17,7 @@ int localSize = 5;
 float historyPosition = 1.0;
 HistoryListener historyListener;
 boolean eraseOn = false;
+boolean reset = false;
 
 ControlFont menlo;
 PGraphics canvas;
@@ -177,7 +178,9 @@ void timerRemote(float position) {
 }
 
 void timerReset() {
-  cp5.controller("historyPosition").setValue(1.0); 
+  println("Timer reset on client end");
+  reset = true;
+  cp5.controller("historyPosition").setValue(1.0);
 }
 
 OscMessage moveMessage() {
@@ -265,9 +268,10 @@ void stylePurple(Controller c, String t) {
 class HistoryListener implements ControlListener {
   float oldHist = 1.0;
   public void controlEvent(ControlEvent e) {
-    if (oldHist != e.controller().value()) { 
+    if (abs(oldHist-e.controller().value()) > .1 && !reset) { 
       oscP5.send(timerMessage(e.controller().value()), drawServer);
       oldHist = e.controller().value();
     }
-  } 
+    reset = false;
+  }
 }

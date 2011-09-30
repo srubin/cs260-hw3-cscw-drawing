@@ -16,6 +16,7 @@ int broadcastPort = 5403;
 
 boolean inThePast = false;
 int lastToSend;
+int lastPosition = -1;
 
 List history;
 
@@ -61,8 +62,10 @@ void oscEvent(OscMessage message) {
       history.add(message);
     } else if (inThePast) {
       if (message.addrPattern().equals("/draw")) {
+        
         // we only re-start keeping track of history when new drawings are put down
         inThePast = false;
+        lastPosition = 0;
         history = history.subList(0, lastToSend);
         OscMessage resetToPresent = new OscMessage("/timerReset");
         //resetToPresent.add(1.0);
@@ -73,16 +76,20 @@ void oscEvent(OscMessage message) {
 }
 
 void timerReset() {
+  println("timer reset on server");
 }
 
 void timer(float position) {
+  println("timer event on server at " + position);
   lastToSend = int(history.size() * position);
-  OscMessage clear = new OscMessage("/cleanStage");
-  oscP5.send(clear, listeners);
-  /*OscMessage adjustSlider = new OscMessage("/timer");
-  adjustSlider.add(position);
-  oscP5.send(adjustSlider, listeners);*/
-  for (int i=0; i<lastToSend; i++) {
+
+  if (lastPosition > lastToSend || lastPosition == -1) {
+    lastPosition = 0;
+    OscMessage clear = new OscMessage("/cleanStage");
+    oscP5.send(clear, listeners); 
+  }
+  
+  for (int i=lastPosition; i<lastToSend; i++) {
      oscP5.send((OscMessage)history.get(i), listeners);
   }
   if (position < 1.0) {
@@ -90,6 +97,7 @@ void timer(float position) {
   } else {
     inThePast = false;
   }
+  lastPosition = lastToSend;
 } 
 
 void connect(String IP){
