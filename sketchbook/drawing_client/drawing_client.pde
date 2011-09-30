@@ -127,6 +127,7 @@ void draw() {
     }
     else if (inDrawingArea(mouseX, mouseY)) {
        message = drawMessage();
+       drawRemote(pmouseX-170, pmouseY, mouseX-170, mouseY, eraseOn ? color(#ffffff) : localColor, localSize);
     }
     else {
        message = moveMessage(); 
