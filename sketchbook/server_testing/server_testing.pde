@@ -26,6 +26,7 @@ void setup() {
   //frameRate(1);
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
+  oscP5.plug(this,"timerReset","/timerReset");
   
   fill(0);
   text("Server", 10, 30);
@@ -63,26 +64,32 @@ void oscEvent(OscMessage message) {
         // we only re-start keeping track of history when new drawings are put down
         inThePast = false;
         history = history.subList(0, lastToSend);
-        history.add(message);
-        OscMessage resetToPresent = new OscMessage("/timer");
-        resetToPresent.add(1.0);
+        OscMessage resetToPresent = new OscMessage("/timerReset");
+        //resetToPresent.add(1.0);
         oscP5.send(resetToPresent, listeners);
       } 
     }
   }
 }
 
+void timerReset() {
+}
+
 void timer(float position) {
   lastToSend = int(history.size() * position);
   OscMessage clear = new OscMessage("/cleanStage");
   oscP5.send(clear, listeners);
-  OscMessage adjustSlider = new OscMessage("/timer");
+  /*OscMessage adjustSlider = new OscMessage("/timer");
   adjustSlider.add(position);
-  oscP5.send(adjustSlider, listeners);
+  oscP5.send(adjustSlider, listeners);*/
   for (int i=0; i<lastToSend; i++) {
      oscP5.send((OscMessage)history.get(i), listeners);
   }
-  inThePast = true;
+  if (position < 1.0) {
+    inThePast = true;
+  } else {
+    inThePast = false;
+  }
 } 
 
 void connect(String IP){

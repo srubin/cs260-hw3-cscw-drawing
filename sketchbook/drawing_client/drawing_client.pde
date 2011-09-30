@@ -43,6 +43,7 @@ void setup() {
   oscP5.plug(this,"imageRemote","/image");
   oscP5.plug(this,"timerRemote","/timer");
   oscP5.plug(this,"cleanStage","/cleanStage");
+  oscP5.plug(this,"timerReset","/timerReset");
   
   cp5 = new ControlP5(this);
   cp5.addSlider("localSize",1,50,localSize,10,45,150,25).setCaptionLabel("Brush size");
@@ -172,8 +173,11 @@ void imageRemote(byte[] imageData, int x, int y) {
 }
 
 void timerRemote(float position) {
-  println("got timer in client to " + position);
   cp5.controller("historyPosition").setValue(position);
+}
+
+void timerReset() {
+  cp5.controller("historyPosition").setValue(1.0); 
 }
 
 OscMessage moveMessage() {
