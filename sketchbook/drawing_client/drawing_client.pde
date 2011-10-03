@@ -55,8 +55,9 @@ void setup() {
   cp5.addButton("clean",0,10,80,70,25).setCaptionLabel("Clear");
   cp5.addTextfield("chatEntry",10,565,780,25);
   
-  cp5.addTextarea("chatDisplay","test woop woop woop woop woop woop",10,185,140,370);
+  cp5.addTextarea("chatDisplay","Chat",10,185,140,370);
   chat = (Textarea)cp5.getGroup("chatDisplay");
+  chat.valueLabel().setFont(ControlP5.grixel);
   chat.setColor(#000000);
   
   
@@ -146,7 +147,7 @@ void draw() {
     message = moveMessage(); 
   }
   
-  if (false) { message = chatMessage("i am not a robot, i am a unicorn."); }
+  if (false) { message = chatMessage("192.168.1.1","i am not a robot, i am a unicorn."); }
 
   oscP5.send(message, drawServer);
   
@@ -172,8 +173,8 @@ void moveRemote(int x, int y, color c, int brushsize, int id) {
   ghosts.endDraw();
 }
 
-void chatRemote(String chatstring) {
-  chat.setText(chat.text() + "\n" + chatstring);
+void chatRemote(String ip, String chatstring) {
+  chat.setText(chat.text() + "\n\n" + ip + ": " + chatstring);
   chat.scroll(1.0);
 }
 
@@ -224,8 +225,9 @@ OscMessage timerMessage(float val) {
   return message;
 }
 
-OscMessage chatMessage(String chatString) {
+OscMessage chatMessage(String ip, String chatString) {
   OscMessage message = new OscMessage("/chat");
+  message.add(ip);
   message.add(chatString);
   
   return message;
@@ -288,6 +290,6 @@ class HistoryListener implements ControlListener {
 }
 
 void chatEntry(String t) {
-  OscMessage message = chatMessage(t);
+  OscMessage message = chatMessage(oscP5.ip(),t);
   oscP5.send(message, drawServer);
 }

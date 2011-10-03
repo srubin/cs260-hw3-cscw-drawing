@@ -48,7 +48,7 @@ void oscEvent(OscMessage message) {
       return;
     }
     // do not send move messages to their own client
-    if (message.addrPattern().equals("/move")) {
+    if (message.checkAddrPattern("/move")) {
        for(int i=0; i<listeners.size(); i++) {
          NetAddress client = listeners.get(i);
          if (!("/" + client.address()).equals(message.address())) {
@@ -58,7 +58,8 @@ void oscEvent(OscMessage message) {
     } else {
       oscP5.send(message, listeners);
     }
-    if (!inThePast && !message.addrPattern().equals("/move")) {
+    if (!inThePast && !message.checkAddrPattern("/move")
+           && !message.checkAddrPattern("/chat")) {
       history.add(message);
     } else if (inThePast) {
       if (message.addrPattern().equals("/draw")) {
