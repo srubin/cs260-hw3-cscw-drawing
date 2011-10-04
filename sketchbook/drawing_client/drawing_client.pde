@@ -28,7 +28,7 @@ void setup() {
   size(800,600);
   background(255);
   fill(0);
-  //frameRate(100);
+  frameRate(30); // prevents the server from freaking out
   smooth();
   oscP5 = new OscP5(this, myListenPort);
   
@@ -59,7 +59,6 @@ void setup() {
   chat = (Textarea)cp5.getGroup("chatDisplay");
   chat.valueLabel().setFont(ControlP5.grixel);
   chat.setColor(#000000);
-  
   
   stylePurple(cp5.controller("chatEntry"), "toggle");
   stylePurple(cp5.controller("eraseOn"), "toggle");
@@ -284,8 +283,10 @@ class HistoryListener implements ControlListener {
     if (abs(oldHist-e.controller().value()) > .1 && !reset) { 
       oscP5.send(timerMessage(e.controller().value()), drawServer);
       oldHist = e.controller().value();
+    } else if (reset) {
+      oldHist = 1.0;
+      reset = false;
     }
-    reset = false;
   }
 }
 

@@ -33,9 +33,7 @@ void setup() {
   text("Server", 10, 30);
 }
 
-void draw() {
-
-}
+void draw() { }
 
 void oscEvent(OscMessage message) {
   if (!message.isPlugged()) {
@@ -62,11 +60,12 @@ void oscEvent(OscMessage message) {
            && !message.checkAddrPattern("/chat")) {
       history.add(message);
     } else if (inThePast) {
-      if (message.addrPattern().equals("/draw")) {
+      if (message.checkAddrPattern("/draw") ||
+          message.checkAddrPattern("/cleanStage")) {
         
         // we only re-start keeping track of history when new drawings are put down
         inThePast = false;
-        lastPosition = 0;
+        lastPosition = -1;
         history = history.subList(0, lastToSend);
         OscMessage resetToPresent = new OscMessage("/timerReset");
         //resetToPresent.add(1.0);
