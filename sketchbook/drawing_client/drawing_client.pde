@@ -3,7 +3,7 @@ import netP5.*;
 import controlP5.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.*;
-
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 OscP5 oscP5;
@@ -104,8 +104,11 @@ void imageButton() {
       //imageData = new byte[img.width*img.height];
       byte[] imageData = loadBytes(imageLocation); 
       imgMsg = new OscMessage("/image");
-      imgMsg.add(OscMessage.makeBlob(imageData));
+      byte[] imgBlob = OscMessage.makeBlob(imageData);
+      imgMsg.add(imgBlob);
       imgPosition = true;
+      println("imageData len: " + imageData.length);
+      println("blob len: " + imgBlob.length);
       /*imgMsg.add(0);
       imgMsg.add(0);
       oscP5.send(imgMsg, drawServer);*/
@@ -200,9 +203,9 @@ void chatRemote(String ip, String chatstring) {
 }
 
 void imageRemote(byte[] imgBytes, int x, int y) {
-  println("Got remote image message at " + x + " " + y);
-  
-  PImage pim = getAsImage(imgBytes);
+  println("Got remote image message at " + x + " " + y + " " + imgBytes[0] +" "+ imgBytes[1] +" "+ imgBytes[2] +" "+ imgBytes[3]);
+
+  PImage pim = getAsImage(subset(imgBytes,4));
   canvas.beginDraw();
   canvas.image(pim,x,y);
   canvas.endDraw();
