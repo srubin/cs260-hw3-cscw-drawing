@@ -1,7 +1,9 @@
 import oscP5.*;
 import netP5.*;
 import controlP5.*;
-
+import java.awt.image.BufferedImage;
+import javax.imageio.*;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 OscP5 oscP5;
@@ -20,6 +22,10 @@ HistoryListener historyListener;
 boolean eraseOn = false;
 boolean reset = false;
 
+PImage  img;
+OscMessage imgMsg;
+boolean imgPosition = false;
+
 ControlFont menlo;
 PGraphics canvas;
 PGraphics ghosts;
@@ -37,7 +43,11 @@ void setup() {
   fill(0);
   frameRate(30); // prevents the server from freaking out
   smooth();
-  oscP5 = new OscP5(this, myListenPort);
+  
+  OscProperties props = new OscProperties();
+  props.setListeningPort(myListenPort);
+  props.setDatagramSize(100000);
+  oscP5 = new OscP5(this, props);
   
   id = int(random(1<<8));
   localColor = color(0);
@@ -132,9 +142,12 @@ void imageButton() {
   String imageLocation = selectInput("Choose an image file (png, gif, tga, jpg)");
   if (imageLocation != null) {
     if (imageLocation.matches(".*(png|gif|tga|jpg|jpeg)$")) {
+      img = loadImage(imageLocation);
       byte[] imageData = loadBytes(imageLocation); 
-      OscMessage message = imageMessage(imageData);
-      oscP5.send(message, drawServer);
+      imgMsg = new OscMessage("/image");  
+      byte[] imgBlob = OscMessage.makeBlob(imageData);
+      imgMsg.add(imgBlob);
+      imgPosition = true;
     }
   }
 }
@@ -167,7 +180,16 @@ void draw() {
   noStroke();
   rect(85,0,75,10);
   
-  if (mousePressed) {
+  if (mousePressed && imgPosition) {
+    canvas.beginDraw();
+    canvas.image(img, mouseX-170, mouseY);
+    canvas.endDraw();
+    image(canvas,170,0); 
+    imgPosition = false;
+    imgMsg.add(mouseX-170);
+    imgMsg.add(mouseY);
+    message = imgMsg;
+  } else if (mousePressed) {
     if (colorSelected(mouseX, mouseY)) {
        setColor(mouseX, mouseY);
        message = moveMessage();
@@ -214,12 +236,33 @@ void chatRemote(String ip, String chatstring) {
   chat.scroll(1.0);
 }
 
-void imageRemote(byte[] imageData, int x, int y) {
-  // discussion of PImage loading from byte[] found online
-  // http://processing.org/discourse/yabb2/YaBB.pl?num=1234546778
-  //Image awtImage = Toolkit.getDefaultToolkit().createImage(imageData);
-  //PImage img = loadImageMT(awtImage);
+void imageRemote(byte[] imgBytes, int x, int y) {
+  println("Got remote image message at " + x + " " + y + " " + imgBytes[0] +" "+ imgBytes[1] +" "+ imgBytes[2] +" "+ imgBytes[3]);
+
+  PImage pim = getAsImage(subset(imgBytes,4));
+  canvas.beginDraw();
+  canvas.image(pim,x,y);
+  canvas.endDraw();
+  image(canvas,170,0);
 }
+
+// this method is from the web
+public PImage getAsImage(byte[] imgBytes) {
+  try {
+    ByteArrayInputStream bis=new ByteArrayInputStream(imgBytes); 
+    BufferedImage bimg = ImageIO.read(bis); 
+    PImage img=new PImage(bimg.getWidth(),bimg.getHeight(),PConstants.ARGB);
+    bimg.getRGB(0, 0, img.width, img.height, img.pixels, 0, img.width);
+    img.updatePixels();
+    return img;
+  }
+  catch(Exception e) {
+    System.err.println("Can't create image from buffer");
+    e.printStackTrace();
+  }
+  return null;
+}
+
 
 void timerRemote(float position) {
   cp5.controller("historyPosition").setValue(position);
@@ -271,12 +314,12 @@ OscMessage chatMessage(String ip, String chatString) {
   return message;
 }
 
-OscMessage imageMessage(byte[] imageData) {
+OscMessage imageMessage(int x, int y, byte[] imageData) {
   OscMessage message = new OscMessage("/image");
-  message.add(imageData);
-  //message.add(someXValue);
-  //message.add(someYValue);
-  
+  message.add(x);
+  message.add(y);
+  byte[] toSend = OscMessage.makeBlob(imageData);
+  message.add(toSend);  
   return message;
 }
 
@@ -394,4 +437,17 @@ Doer createLocalMessage(OscMessage message) {
     retVal = new LocalImageMessage();
   }
   return retVal;
+}
+
+
+// http://stackoverflow.com/questions/6052324/how-to-break-an-object-into-a-byte
+public static byte[] getBytes(Serializable obj) throws IOException {
+    ByteArrayOutputStream bos   = new ByteArrayOutputStream();
+    ObjectOutputStream oos      = new ObjectOutputStream(bos);
+    oos.writeObject(obj);
+
+    byte[] data = bos.toByteArray();
+
+    oos.close();
+    return data;
 }
