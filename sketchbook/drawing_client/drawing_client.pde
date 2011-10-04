@@ -126,7 +126,7 @@ void replayHistoryToPosition(float position) {
   for(int i = 0; i < lastToReplay; i++) {
     Doer localAction = (Doer)history.get(i);
     localAction.doAction();
-    println("redid message number " + str(i));
+    //println("redid message number " + str(i));
   }
 }
 
@@ -259,8 +259,10 @@ public PImage getAsImage(byte[] imgBytes) {
 }
 
 void timerRemote(float position) {
-  cp5.controller("historyPosition").setValue(position);
+  
+  println("got timerRemote at " + position);
   replayHistoryToPosition(position);
+  cp5.controller("historyPosition").setValue(position);
 }
 
 void timerReset() {
@@ -295,7 +297,7 @@ OscMessage drawMessage() {
 OscMessage timerMessage(float val) {
   OscMessage message = new OscMessage("/timer");
   message.add(val);
-  inThePast = true;
+  inThePast = (val == 1.0) ? false : true;
   
   return message;
 }
@@ -353,12 +355,13 @@ class HistoryListener implements ControlListener {
   float oldHist = 1.0;
   public void controlEvent(ControlEvent e) {
     if (abs(oldHist-e.controller().value()) > .1 && !reset) { 
+      println("new: " +e.controller().value() + " old:" + oldHist);
       oscP5.send(timerMessage(e.controller().value()), drawServer);
       oldHist = e.controller().value();
     } else if (reset) {
       oldHist = 1.0;
       reset = false;
-    }
+    } 
   }
 }
 
