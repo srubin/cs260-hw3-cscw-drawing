@@ -36,7 +36,11 @@ void setup() {
   fill(0);
   frameRate(30); // prevents the server from freaking out
   smooth();
-  oscP5 = new OscP5(this, myListenPort);
+  
+  OscProperties props = new OscProperties();
+  props.setListeningPort(myListenPort);
+  props.setDatagramSize(100000);
+  oscP5 = new OscP5(this, props);
   
   id = int(random(1<<8));
   localColor = color(0);
@@ -101,17 +105,11 @@ void imageButton() {
   if (imageLocation != null) {
     if (imageLocation.matches(".*(png|gif|tga|jpg|jpeg)$")) {
       img = loadImage(imageLocation);
-      //imageData = new byte[img.width*img.height];
       byte[] imageData = loadBytes(imageLocation); 
-      imgMsg = new OscMessage("/image");
+      imgMsg = new OscMessage("/image");  
       byte[] imgBlob = OscMessage.makeBlob(imageData);
       imgMsg.add(imgBlob);
       imgPosition = true;
-      println("imageData len: " + imageData.length);
-      println("blob len: " + imgBlob.length);
-      /*imgMsg.add(0);
-      imgMsg.add(0);
-      oscP5.send(imgMsg, drawServer);*/
     }
   }
 }
@@ -145,15 +143,14 @@ void draw() {
   rect(85,0,75,10);
   
   if (mousePressed && imgPosition) {
-    /*canvas.beginDraw();
+    canvas.beginDraw();
     canvas.image(img, mouseX-170, mouseY);
     canvas.endDraw();
-    image(canvas,170,0);*/ 
+    image(canvas,170,0); 
     imgPosition = false;
     imgMsg.add(mouseX-170);
     imgMsg.add(mouseY);
     message = imgMsg;
-    //message = imageMessage(mouseX-170, mouseY, imageData);
   } else if (mousePressed) {
     if (colorSelected(mouseX, mouseY)) {
        setColor(mouseX, mouseY);
@@ -210,13 +207,9 @@ void imageRemote(byte[] imgBytes, int x, int y) {
   canvas.image(pim,x,y);
   canvas.endDraw();
   image(canvas,170,0);
-  
-  // discussion of PImage loading from byte[] found online
-  // http://processing.org/discourse/yabb2/YaBB.pl?num=1234546778
-  //Image awtImage = Toolkit.getDefaultToolkit().createImage(imageData);
-  //PImage img = loadImageMT(awtImage);
 }
 
+// this method is from the web
 public PImage getAsImage(byte[] imgBytes) {
   try {
     ByteArrayInputStream bis=new ByteArrayInputStream(imgBytes); 
@@ -227,7 +220,6 @@ public PImage getAsImage(byte[] imgBytes) {
     return img;
   }
   catch(Exception e) {
-   
     System.err.println("Can't create image from buffer");
     e.printStackTrace();
   }

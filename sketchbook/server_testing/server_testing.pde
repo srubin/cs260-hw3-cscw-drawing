@@ -25,7 +25,10 @@ void setup() {
   background(255);
   size(100, 100); 
   //frameRate(1);
-  oscP5 = new OscP5(this,listenPort);
+  OscProperties props = new OscProperties();
+  props.setListeningPort(listenPort);
+  props.setDatagramSize(100000);
+  oscP5 = new OscP5(this,props);
   oscP5.plug(this,"timer","/timer");
   oscP5.plug(this,"timerReset","/timerReset");
   //oscP5.plug(this,"imgMsg","/image");
