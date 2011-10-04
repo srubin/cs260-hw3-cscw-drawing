@@ -110,12 +110,10 @@ void oscEvent(OscMessage message) {
       message.checkAddrPattern("/image")) {
         // these are the only kinds of messages we want to store
         if (inThePast) {
-          if (message.checkAddrPattern("/cleanStage") || message.checkAddrPattern("/draw")) {
-            inThePast = false;
-            history = history.subList(0, lastToReplay);
-            timerReset();
-            history.add(createLocalMessage(message));
-          } // forget about things that aren't modifying the stage that we do in the past
+          inThePast = false;
+          history = history.subList(0, lastToReplay);
+          timerReset();
+          history.add(createLocalMessage(message));
         } else {
           history.add(createLocalMessage(message)); 
         }
@@ -310,15 +308,6 @@ OscMessage chatMessage(String ip, String chatString) {
   return message;
 }
 
-OscMessage imageMessage(int x, int y, byte[] imageData) {
-  OscMessage message = new OscMessage("/image");
-  message.add(x);
-  message.add(y);
-  byte[] toSend = OscMessage.makeBlob(imageData);
-  message.add(toSend);  
-  return message;
-}
-
 boolean colorSelected(int x, int y) {
   return (x >= 10 && x <= 160 && y <= 35 && y >= 10) 
     || (x >=10 && x <= 85 && y <= 10);
@@ -378,14 +367,14 @@ interface Doer {
 }
 
 class LocalDrawMessage implements Doer {
-  float prevMouseX;
-  float prevMouseY;
-  float curMouseX;
-  float curMouseY;
+  int prevMouseX;
+  int prevMouseY;
+  int curMouseX;
+  int curMouseY;
   color drawColor;
   int drawSize;
   
-  LocalDrawMessage(float prevMouseX, float prevMouseY, float curMouseX, float curMouseY, color drawColor, int drawSize) {
+  LocalDrawMessage(int prevMouseX, int prevMouseY, int curMouseX, int curMouseY, color drawColor, int drawSize) {
     this.prevMouseX = prevMouseX;
     this.prevMouseY = prevMouseY;
     this.curMouseX = curMouseX;
@@ -395,11 +384,13 @@ class LocalDrawMessage implements Doer {
   }
   
   void doAction() {
-    canvas.beginDraw();
+    drawRemote(prevMouseX, prevMouseY, curMouseX, curMouseY, drawColor, drawSize);
+    /*canvas.beginDraw();
     canvas.strokeWeight(drawSize);
     canvas.stroke(drawColor);
     canvas.line(curMouseX, curMouseY, prevMouseX, prevMouseY);
     canvas.endDraw();
+    image(canvas,170,0);*/
   }
 }
 
@@ -407,16 +398,26 @@ class LocalClearMessage implements Doer {
   LocalClearMessage() {}
 
   void doAction() {
-    canvas.beginDraw();
+    cleanStage();
+    /*canvas.beginDraw();
     canvas.background(#ffffff);
     canvas.endDraw();
-    image(canvas,170,0); 
+    image(canvas,170,0);*/ 
   }
 }
 
 class LocalImageMessage implements Doer {
-  LocalImageMessage() {} 
-  void doAction() {return;}
+  byte[] imgData;
+  int x;
+  int y;
+  LocalImageMessage(byte[] img, int x, int y) {
+    this.imgData = img;
+    this.x = x;
+    this.y = y;
+  } 
+  void doAction() {
+    imageRemote(imgData,x,y);
+  }
 }
 
 Doer createLocalMessage(OscMessage message) {
@@ -430,7 +431,7 @@ Doer createLocalMessage(OscMessage message) {
     retVal = new LocalClearMessage(); 
   }
   if (message.checkAddrPattern("/image")) {
-    retVal = new LocalImageMessage();
+    retVal = new LocalImageMessage(message.get(0).blobValue(), message.get(1).intValue(), message.get(2).intValue());
   }
   return retVal;
 }
