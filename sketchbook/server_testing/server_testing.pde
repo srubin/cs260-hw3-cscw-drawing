@@ -86,6 +86,9 @@ void timer(float position) {
 
   if (lastPosition > lastToSend || lastPosition == -1) {
     lastPosition = 0;
+    OscMessage tmr = new OscMessage("/timer");
+    tmr.add(position);
+    oscP5.send(tmr, listeners);
     OscMessage clear = new OscMessage("/cleanStage");
     oscP5.send(clear, listeners); 
   }
