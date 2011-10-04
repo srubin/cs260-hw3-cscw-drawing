@@ -28,6 +28,7 @@ void setup() {
   oscP5 = new OscP5(this,listenPort);
   oscP5.plug(this,"timer","/timer");
   oscP5.plug(this,"timerReset","/timerReset");
+  //oscP5.plug(this,"imgMsg","/image");
   
   fill(0);
   text("Server", 10, 30);
@@ -45,6 +46,12 @@ void oscEvent(OscMessage message) {
       disconnect(message.netAddress().address());
       return;
     }
+    
+    if (message.checkAddrPattern("/image")) {
+      println("Got image message on server"); 
+    }
+    
+    
     // do not send move messages to their own client
     if (message.checkAddrPattern("/move")) {
        for(int i=0; i<listeners.size(); i++) {

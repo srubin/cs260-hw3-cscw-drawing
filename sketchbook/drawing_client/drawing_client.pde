@@ -1,6 +1,8 @@
 import oscP5.*;
 import netP5.*;
 import controlP5.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.*;
 
 import java.util.regex.Pattern;
 
@@ -18,6 +20,10 @@ float historyPosition = 1.0;
 HistoryListener historyListener;
 boolean eraseOn = false;
 boolean reset = false;
+
+PImage  img;
+OscMessage imgMsg;
+boolean imgPosition = false;
 
 ControlFont menlo;
 PGraphics canvas;
@@ -94,9 +100,15 @@ void imageButton() {
   String imageLocation = selectInput("Choose an image file (png, gif, tga, jpg)");
   if (imageLocation != null) {
     if (imageLocation.matches(".*(png|gif|tga|jpg|jpeg)$")) {
+      img = loadImage(imageLocation);
+      //imageData = new byte[img.width*img.height];
       byte[] imageData = loadBytes(imageLocation); 
-      OscMessage message = imageMessage(imageData);
-      oscP5.send(message, drawServer);
+      imgMsg = new OscMessage("/image");
+      imgMsg.add(OscMessage.makeBlob(imageData));
+      imgPosition = true;
+      /*imgMsg.add(0);
+      imgMsg.add(0);
+      oscP5.send(imgMsg, drawServer);*/
     }
   }
 }
@@ -129,7 +141,17 @@ void draw() {
   noStroke();
   rect(85,0,75,10);
   
-  if (mousePressed) {
+  if (mousePressed && imgPosition) {
+    /*canvas.beginDraw();
+    canvas.image(img, mouseX-170, mouseY);
+    canvas.endDraw();
+    image(canvas,170,0);*/ 
+    imgPosition = false;
+    imgMsg.add(mouseX-170);
+    imgMsg.add(mouseY);
+    message = imgMsg;
+    //message = imageMessage(mouseX-170, mouseY, imageData);
+  } else if (mousePressed) {
     if (colorSelected(mouseX, mouseY)) {
        setColor(mouseX, mouseY);
        message = moveMessage();
@@ -177,12 +199,38 @@ void chatRemote(String ip, String chatstring) {
   chat.scroll(1.0);
 }
 
-void imageRemote(byte[] imageData, int x, int y) {
+void imageRemote(byte[] imgBytes, int x, int y) {
+  println("Got remote image message at " + x + " " + y);
+  
+  PImage pim = getAsImage(imgBytes);
+  canvas.beginDraw();
+  canvas.image(pim,x,y);
+  canvas.endDraw();
+  image(canvas,170,0);
+  
   // discussion of PImage loading from byte[] found online
   // http://processing.org/discourse/yabb2/YaBB.pl?num=1234546778
   //Image awtImage = Toolkit.getDefaultToolkit().createImage(imageData);
   //PImage img = loadImageMT(awtImage);
 }
+
+public PImage getAsImage(byte[] imgBytes) {
+  try {
+    ByteArrayInputStream bis=new ByteArrayInputStream(imgBytes); 
+    BufferedImage bimg = ImageIO.read(bis); 
+    PImage img=new PImage(bimg.getWidth(),bimg.getHeight(),PConstants.ARGB);
+    bimg.getRGB(0, 0, img.width, img.height, img.pixels, 0, img.width);
+    img.updatePixels();
+    return img;
+  }
+  catch(Exception e) {
+   
+    System.err.println("Can't create image from buffer");
+    e.printStackTrace();
+  }
+  return null;
+}
+
 
 void timerRemote(float position) {
   cp5.controller("historyPosition").setValue(position);
@@ -232,12 +280,12 @@ OscMessage chatMessage(String ip, String chatString) {
   return message;
 }
 
-OscMessage imageMessage(byte[] imageData) {
+OscMessage imageMessage(int x, int y, byte[] imageData) {
   OscMessage message = new OscMessage("/image");
-  message.add(imageData);
-  //message.add(someXValue);
-  //message.add(someYValue);
-  
+  message.add(x);
+  message.add(y);
+  byte[] toSend = OscMessage.makeBlob(imageData);
+  message.add(toSend);  
   return message;
 }
 
@@ -293,4 +341,17 @@ class HistoryListener implements ControlListener {
 void chatEntry(String t) {
   OscMessage message = chatMessage(oscP5.ip(),t);
   oscP5.send(message, drawServer);
+}
+
+
+// http://stackoverflow.com/questions/6052324/how-to-break-an-object-into-a-byte
+public static byte[] getBytes(Serializable obj) throws IOException {
+    ByteArrayOutputStream bos   = new ByteArrayOutputStream();
+    ObjectOutputStream oos      = new ObjectOutputStream(bos);
+    oos.writeObject(obj);
+
+    byte[] data = bos.toByteArray();
+
+    oos.close();
+    return data;
 }
