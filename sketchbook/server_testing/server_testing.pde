@@ -54,7 +54,6 @@ void oscEvent(OscMessage message) {
       println("Got image message on server"); 
     }
     
-    
     // do not send move messages to their own client
     if (message.checkAddrPattern("/move")) {
        for(int i=0; i<listeners.size(); i++) {

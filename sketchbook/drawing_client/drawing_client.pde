@@ -3,7 +3,6 @@ import netP5.*;
 import controlP5.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.*;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 OscP5 oscP5;
@@ -200,8 +199,6 @@ void chatRemote(String ip, String chatstring) {
 }
 
 void imageRemote(byte[] imgBytes, int x, int y) {
-  println("Got remote image message at " + x + " " + y + " " + imgBytes[0] +" "+ imgBytes[1] +" "+ imgBytes[2] +" "+ imgBytes[3]);
-
   PImage pim = getAsImage(subset(imgBytes,4));
   canvas.beginDraw();
   canvas.image(pim,x,y);
@@ -225,7 +222,6 @@ public PImage getAsImage(byte[] imgBytes) {
   }
   return null;
 }
-
 
 void timerRemote(float position) {
   cp5.controller("historyPosition").setValue(position);
@@ -336,17 +332,4 @@ class HistoryListener implements ControlListener {
 void chatEntry(String t) {
   OscMessage message = chatMessage(oscP5.ip(),t);
   oscP5.send(message, drawServer);
-}
-
-
-// http://stackoverflow.com/questions/6052324/how-to-break-an-object-into-a-byte
-public static byte[] getBytes(Serializable obj) throws IOException {
-    ByteArrayOutputStream bos   = new ByteArrayOutputStream();
-    ObjectOutputStream oos      = new ObjectOutputStream(bos);
-    oos.writeObject(obj);
-
-    byte[] data = bos.toByteArray();
-
-    oos.close();
-    return data;
 }
