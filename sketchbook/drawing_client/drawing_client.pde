@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 OscP5 oscP5;
 NetAddress drawServer;
+NetAddress me;
 ControlP5 cp5;
 
 int serverListenPort = 5402;
@@ -29,7 +30,13 @@ PGraphics canvas;
 PGraphics ghosts;
 Textarea chat;
 
+List history;
+boolean inThePast = false;
+int lastToReplay = -1;
+
 void setup() {
+  history = new ArrayList();
+  
   size(800,600);
   background(255);
   fill(0);
@@ -44,9 +51,12 @@ void setup() {
   id = int(random(1<<8));
   localColor = color(0);
   
+  //drawServer = new NetAddress("128.32.44.58", serverListenPort);
   drawServer = new NetAddress("127.0.0.1", serverListenPort);
   OscMessage message = new OscMessage("/server/connect");
   oscP5.flush(message, drawServer);
+  
+  me = new NetAddress("127.0.0.1", myListenPort);
   
   oscP5.plug(this,"drawRemote","/draw");
   oscP5.plug(this,"moveRemote","/move");
@@ -92,6 +102,34 @@ void setup() {
   ghosts.beginDraw();
   ghosts.smooth();
   ghosts.endDraw();
+}
+
+void oscEvent(OscMessage message) {
+  if (message.checkAddrPattern("/cleanStage") ||
+      message.checkAddrPattern("/draw") ||
+      message.checkAddrPattern("/image")) {
+        // these are the only kinds of messages we want to store
+        if (inThePast) {
+          if (message.checkAddrPattern("/cleanStage") || message.checkAddrPattern("/draw")) {
+            inThePast = false;
+            history = history.subList(0, lastToReplay);
+            timerReset();
+            history.add(createLocalMessage(message));
+          } // forget about things that aren't modifying the stage that we do in the past
+        } else {
+          history.add(createLocalMessage(message)); 
+        }
+  }
+}
+
+void replayHistoryToPosition(float position) {
+  lastToReplay = (int)(position * history.size());
+  cleanStage();
+  for(int i = 0; i < lastToReplay; i++) {
+    Doer localAction = (Doer)history.get(i);
+    localAction.doAction();
+    println("redid message number " + str(i));
+  }
 }
 
 void clean() {
@@ -181,7 +219,6 @@ void drawRemote(int px, int py, int cx, int cy, color c, int brushSize) {
   canvas.stroke(c);
   canvas.line(cx, cy, px, py);
   canvas.endDraw();
-  
 }
 
 void moveRemote(int x, int y, color c, int brushsize, int id) {
@@ -225,6 +262,7 @@ public PImage getAsImage(byte[] imgBytes) {
 
 void timerRemote(float position) {
   cp5.controller("historyPosition").setValue(position);
+  replayHistoryToPosition(position);
 }
 
 void timerReset() {
@@ -259,6 +297,7 @@ OscMessage drawMessage() {
 OscMessage timerMessage(float val) {
   OscMessage message = new OscMessage("/timer");
   message.add(val);
+  inThePast = true;
   
   return message;
 }
@@ -316,6 +355,11 @@ void stylePurple(Controller c, String t) {
   c.captionLabel().setControlFont(menlo);
 }
 
+void chatEntry(String t) {
+  OscMessage message = chatMessage(oscP5.ip(),t);
+  oscP5.send(message, drawServer);
+}
+
 class HistoryListener implements ControlListener {
   float oldHist = 1.0;
   public void controlEvent(ControlEvent e) {
@@ -329,7 +373,64 @@ class HistoryListener implements ControlListener {
   }
 }
 
-void chatEntry(String t) {
-  OscMessage message = chatMessage(oscP5.ip(),t);
-  oscP5.send(message, drawServer);
+interface Doer {
+  void doAction();
+}
+
+class LocalDrawMessage implements Doer {
+  float prevMouseX;
+  float prevMouseY;
+  float curMouseX;
+  float curMouseY;
+  color drawColor;
+  int drawSize;
+  
+  LocalDrawMessage(float prevMouseX, float prevMouseY, float curMouseX, float curMouseY, color drawColor, int drawSize) {
+    this.prevMouseX = prevMouseX;
+    this.prevMouseY = prevMouseY;
+    this.curMouseX = curMouseX;
+    this.curMouseY = curMouseY;
+    this.drawColor = drawColor;
+    this.drawSize = drawSize;
+  }
+  
+  void doAction() {
+    canvas.beginDraw();
+    canvas.strokeWeight(drawSize);
+    canvas.stroke(drawColor);
+    canvas.line(curMouseX, curMouseY, prevMouseX, prevMouseY);
+    canvas.endDraw();
+  }
+}
+
+class LocalClearMessage implements Doer {
+  LocalClearMessage() {}
+
+  void doAction() {
+    canvas.beginDraw();
+    canvas.background(#ffffff);
+    canvas.endDraw();
+    image(canvas,170,0); 
+  }
+}
+
+class LocalImageMessage implements Doer {
+  LocalImageMessage() {} 
+  void doAction() {return;}
+}
+
+Doer createLocalMessage(OscMessage message) {
+  Doer retVal = null;
+
+  if (message.checkAddrPattern("/draw")) {
+    retVal = new LocalDrawMessage(message.get(0).intValue(), message.get(1).intValue(), message.get(2).intValue(),
+                                  message.get(3).intValue(), message.get(4).intValue(), message.get(5).intValue());
+  }
+  if (message.checkAddrPattern("/cleanStage")) {
+    retVal = new LocalClearMessage(); 
+  }
+  if (message.checkAddrPattern("/image")) {
+    retVal = new LocalImageMessage();
+  }
+  return retVal;
 }
