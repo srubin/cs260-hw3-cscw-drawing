@@ -33,6 +33,7 @@ Textarea chat;
 List history;
 boolean inThePast = false;
 int lastToReplay = -1;
+boolean drawFromHistory = true;
 
 void setup() {
   history = new ArrayList();
@@ -88,6 +89,7 @@ void setup() {
   
   historyListener = new HistoryListener();
   cp5.controller("historyPosition").addListener(historyListener);
+  ((Slider)cp5.controller("historyPosition")).setNumberOfTickMarks(11);
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
   cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
@@ -157,6 +159,11 @@ void cleanStage() {
 }
 
 void draw() {
+  if (drawFromHistory) {
+    replayHistoryToPosition(cp5.controller("historyPosition").value());
+    drawFromHistory = false;
+  }
+  
   OscMessage message;
 
   background(#ffffff);
@@ -259,9 +266,9 @@ public PImage getAsImage(byte[] imgBytes) {
 }
 
 void timerRemote(float position) {
-  
   println("got timerRemote at " + position);
-  replayHistoryToPosition(position);
+  drawFromHistory = true;
+  //replayHistoryToPosition(position);
   cp5.controller("historyPosition").setValue(position);
 }
 
@@ -354,7 +361,7 @@ void chatEntry(String t) {
 class HistoryListener implements ControlListener {
   float oldHist = 1.0;
   public void controlEvent(ControlEvent e) {
-    if (abs(oldHist-e.controller().value()) > .1 && !reset) { 
+    if (abs(oldHist-e.controller().value()) >= .1 && !reset) { 
       println("new: " +e.controller().value() + " old:" + oldHist);
       oscP5.send(timerMessage(e.controller().value()), drawServer);
       oldHist = e.controller().value();
