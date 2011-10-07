@@ -29,6 +29,7 @@ PImage  img;
 OscMessage imgMsg;
 boolean imgPosition = false;
 
+// Comment out if you have portability issues with the font
 ControlFont menlo;
 PGraphics canvas;
 PGraphics ghosts;
@@ -97,8 +98,8 @@ void setup() {
   ((Slider)cp5.controller("historyPosition")).setNumberOfTickMarks(11);
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
-  int erLen = cp5.controller("eraseOn").captionLabel().length();
-  cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*erLan;
+  int erLen = cp5.controller("eraseOn").captionLabel().toString().length();
+  cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*erLen;
   
   canvas = createGraphics(630,600,JAVA2D);
   canvas.beginDraw();
