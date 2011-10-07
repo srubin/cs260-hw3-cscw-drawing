@@ -1,3 +1,7 @@
+/* Collaborative drawing application
+ * (c) 2011 Steve Rubin & Valkyrie Savage
+ * UC Berkeley CS 260 Homework 3
+ */
 import oscP5.*;
 import netP5.*;
 import controlP5.*;
@@ -46,19 +50,20 @@ void setup() {
   
   OscProperties props = new OscProperties();
   props.setListeningPort(myListenPort);
-  props.setDatagramSize(100000);
+  props.setDatagramSize(100000); // allows you to send images over the network
   oscP5 = new OscP5(this, props);
   
   id = int(random(1<<8));
   localColor = color(0);
   
-  //drawServer = new NetAddress("128.32.44.58", serverListenPort);
+  // IP address should be modified to the server's IP
   drawServer = new NetAddress("127.0.0.1", serverListenPort);
   OscMessage message = new OscMessage("/server/connect");
   oscP5.flush(message, drawServer);
   
   me = new NetAddress("127.0.0.1", myListenPort);
   
+  // plug the server events
   oscP5.plug(this,"drawRemote","/draw");
   oscP5.plug(this,"moveRemote","/move");
   oscP5.plug(this,"chatRemote","/chat");
@@ -92,7 +97,8 @@ void setup() {
   ((Slider)cp5.controller("historyPosition")).setNumberOfTickMarks(11);
   
   cp5.controller("eraseOn").captionLabel().style().marginTop = -20;
-  cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*"eraser".length();
+  int erLen = cp5.controller("eraseOn").captionLabel().length();
+  cp5.controller("eraseOn").captionLabel().style().marginLeft = 62-7*erLan;
   
   canvas = createGraphics(630,600,JAVA2D);
   canvas.beginDraw();
@@ -106,6 +112,7 @@ void setup() {
   ghosts.endDraw();
 }
 
+// Catch these events again to store to the local history
 void oscEvent(OscMessage message) {
   if (message.checkAddrPattern("/cleanStage") ||
       message.checkAddrPattern("/draw") ||
@@ -128,7 +135,6 @@ void replayHistoryToPosition(float position) {
   for(int i = 0; i < lastToReplay; i++) {
     Doer localAction = (Doer)history.get(i);
     localAction.doAction();
-    //println("redid message number " + str(i));
   }
 }
 
@@ -184,6 +190,7 @@ void draw() {
   noStroke();
   rect(85,0,75,10);
   
+  // first, check if we're waiting for an image location
   if (mousePressed && imgPosition) {
     canvas.beginDraw();
     canvas.image(img, mouseX-170, mouseY);
@@ -193,7 +200,7 @@ void draw() {
     imgMsg.add(mouseX-170);
     imgMsg.add(mouseY);
     message = imgMsg;
-  } else if (mousePressed) {
+  } else if (mousePressed) { // else process a click normally
     if (colorSelected(mouseX, mouseY)) {
        setColor(mouseX, mouseY);
        message = moveMessage();
@@ -209,11 +216,10 @@ void draw() {
   else { 
     message = moveMessage(); 
   }
-  
-  if (false) { message = chatMessage("192.168.1.1","i am not a robot, i am a unicorn."); }
 
   oscP5.send(message, drawServer);
   
+  // draw the externally drawn canvases to the screen
   image(canvas, 170, 0);
   image(ghosts,0,0);
 }
@@ -248,7 +254,7 @@ void imageRemote(byte[] imgBytes, int x, int y) {
   image(canvas,170,0);
 }
 
-// this method is from the web
+// this method is from the web. Alas! It works.
 public PImage getAsImage(byte[] imgBytes) {
   try {
     ByteArrayInputStream bis=new ByteArrayInputStream(imgBytes); 
@@ -268,7 +274,6 @@ public PImage getAsImage(byte[] imgBytes) {
 void timerRemote(float position) {
   println("got timerRemote at " + position);
   drawFromHistory = true;
-  //replayHistoryToPosition(position);
   cp5.controller("historyPosition").setValue(position);
 }
 
@@ -395,12 +400,6 @@ class LocalDrawMessage implements Doer {
   
   void doAction() {
     drawRemote(prevMouseX, prevMouseY, curMouseX, curMouseY, drawColor, drawSize);
-    /*canvas.beginDraw();
-    canvas.strokeWeight(drawSize);
-    canvas.stroke(drawColor);
-    canvas.line(curMouseX, curMouseY, prevMouseX, prevMouseY);
-    canvas.endDraw();
-    image(canvas,170,0);*/
   }
 }
 
@@ -408,11 +407,7 @@ class LocalClearMessage implements Doer {
   LocalClearMessage() {}
 
   void doAction() {
-    cleanStage();
-    /*canvas.beginDraw();
-    canvas.background(#ffffff);
-    canvas.endDraw();
-    image(canvas,170,0);*/ 
+    cleanStage(); 
   }
 }
 

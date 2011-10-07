@@ -24,7 +24,6 @@ void setup() {
   oscP5 = new OscP5(this,props);
   oscP5.plug(this,"timer","/timer");
   oscP5.plug(this,"timerReset","/timerReset");
-  //oscP5.plug(this,"imgMsg","/image");
   
   fill(0);
   text("Server", 10, 30);
